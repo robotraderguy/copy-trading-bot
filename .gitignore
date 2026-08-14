@@ -1,0 +1,28 @@
+# Environment & credentials
+.env
+
+# Logs
+webhook.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info
+
+# Virtual environments
+venv/
+env/
+
+# IDE
+.idea/
+
+# Temporary scripts
+tmp_*.py
+
+# NOTE: .claude/skills/ is deliberately TRACKED — the skills used in the
+# video ship with the repo (they're part of the follow-along product).
+.claude/settings.local.json
+#  the handoff is YOUR session state, not part of the product — /skill-end
+#  writes it and /skill-init reads it, both locally
+.claude/HANDOFF.md
