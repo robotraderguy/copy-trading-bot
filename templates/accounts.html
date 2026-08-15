@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Accounts{% endblock %}
+
+{% block body %}
+
+<div class="page-head">
+  <p class="eyebrow">Accounts</p>
+  <h1>Who trades, who follows.</h1>
+  <p>Read-only. Every account, sizing rule and switch below lives in the
+     <code>.env</code> file &mdash; there is no database, so there is nowhere for a form on this
+     page to save anything. Each card names the setting to change.</p>
+</div>
+
+<section>
+  <h2 class="section-title">In use</h2>
+
+  {% if not cards %}
+    <div class="table-wrap">
+      <div class="empty">
+        <span class="lead">No usable accounts</span>
+        ACCOUNT_1 in <code>.env</code> is the master. Fill it in and restart the app.
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="grid">
+    {% for card in cards %}
+      <article class="card enter" style="--index:{{ loop.index0 }}">
+
+        <div class="who {{ 'master' if card.is_master else 'follower' }}" style="margin-bottom:14px">
+          <span class="rule-dot"></span>
+          <span class="name">{{ card.account.alias }}</span>
+          <span class="badge {{ 'accent' if card.is_master else 'skip' }}">{{ 'master' if card.is_master else 'follower' }}</span>
+        </div>
+
+        <div class="sizing" style="margin-bottom:18px">
+          {% if card.is_master %}
+            Traded by hand. Its orders are what everything else copies.
+          {% else %}
+            Copies at {{ card.account.sizing_description }}
+          {% endif %}
+        </div>
+
+        {% if card.error %}
+          {# One account's credentials expiring must not blank the page for the
+             others, so the failure lands here as a sentence. #}
+          <div class="notice bad" style="margin:0 0 16px">
+            <strong>The broker refused this account.</strong> {{ card.error }}
+          </div>
+        {% elif card.detail %}
+          {% if card.detail.restricted_to_liquidation %}
+            <div class="notice bad" style="margin:0 0 16px">
+              <strong>Restricted to liquidation only.</strong>
+              Alpaca will accept a sell on this account but refuse every buy, whatever the cash
+              balance says. Open a new paper account to clear it.
+            </div>
+          {% elif card.detail.trading_blocked or card.detail.account_blocked %}
+            <div class="notice bad" style="margin:0 0 16px">
+              <strong>Trading is blocked on this account</strong> at the broker.
+            </div>
+          {% endif %}
+
+          <table style="font-size:13px">
+            <tbody>
+              <tr>
+                <td style="padding:8px 0;border:none;color:var(--text-faint)">Credentials</td>
+                <td style="padding:8px 0;border:none;text-align:right">
+                  <span class="badge fill">working</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:8px 0;border:none;color:var(--text-faint)">Status</td>
+                <td style="padding:8px 0;border:none;text-align:right" class="ticker">{{ card.detail.status }}</td>
+              </tr>
+              <tr>
+                <td style="padding:8px 0;border:none;color:var(--text-faint)">Cash</td>
+                <td class="num" style="padding:8px 0;border:none">{{ card.detail.cash | money }}</td>
+              </tr>
+              <tr>
+                <td style="padding:8px 0;border:none;color:var(--text-faint)">Buying power</td>
+                <td class="num" style="padding:8px 0;border:none">{{ card.detail.buying_power | money }}</td>
+              </tr>
+            </tbody>
+          </table>
+        {% endif %}
+
+        <p style="color:var(--text-faint);font-family:var(--mono);font-size:11px;margin:16px 0 0;line-height:1.7">
+          ACCOUNT_{{ card.account.slot }}_ALIAS<br>
+          ACCOUNT_{{ card.account.slot }}_KEY &mdash; set<br>
+          ACCOUNT_{{ card.account.slot }}_SECRET &mdash; set
+          {% if not card.is_master %}
+            <br>{% if card.account.fixed_shares is not none %}ACCOUNT_{{ card.account.slot }}_FIXED_SHARES{% else %}ACCOUNT_{{ card.account.slot }}_MULTIPLIER{% endif %}
+          {% endif %}
+        </p>
+
+      </article>
+    {% endfor %}
+  </div>
+
+  {% if master and not followers %}
+    <div class="notice warn" style="margin-top:20px">
+      <strong>This copier has a master and nothing to copy into.</strong>
+      Add ACCOUNT_2_ALIAS, ACCOUNT_2_KEY and ACCOUNT_2_SECRET to <code>.env</code>,
+      optionally ACCOUNT_2_MULTIPLIER, then restart the app.
+    </div>
+  {% endif %}
+</section>
+
+{# A slot that failed validation is shown HERE, not omitted. Leaving it out is
+   what makes a misconfigured follower look identical to one working quietly. #}
+{% if problems %}
+  <section>
+    <h2 class="section-title">Configured but not in use</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Slot</th><th>State</th><th>Why, and what to fix</th></tr>
+        </thead>
+        <tbody>
+          {% for problem in problems %}
+            <tr>
+              <td class="ticker">ACCOUNT_{{ problem.slot }}</td>
+              <td><span class="badge reject">not in use</span></td>
+              <td style="color:var(--text-muted)">{{ problem.reason }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p style="color:var(--text-faint);font-size:12.5px;margin-top:12px">
+      These accounts are skipped entirely &mdash; nothing is copied into them, and the
+      accounts above are unaffected. Fix the setting named, then restart the app.
+    </p>
+  </section>
+{% endif %}
+
+<section>
+  <h2 class="section-title">Settings in force</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Setting</th><th>Value</th><th>What it does</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="ticker">COPYING_ENABLED</td>
+          <td><span class="badge {{ 'fill' if copying_enabled else 'skip' }}">{{ 'on' if copying_enabled else 'off' }}</span></td>
+          <td style="color:var(--text-muted)">
+            The killswitch. It stops <em>new</em> copies only &mdash; it does not cancel orders
+            already placed, and does not close positions already opened.
+          </td>
+        </tr>
+        <tr>
+          <td class="ticker">POLL_SECONDS</td>
+          <td class="num">{{ poll_seconds | int }}</td>
+          <td style="color:var(--text-muted)">Seconds between passes. Each pass costs one broker read per account.</td>
+        </tr>
+        <tr>
+          <td class="ticker">STALE_ORDER_SECONDS</td>
+          <td class="num">{{ stale_order_seconds | int }}</td>
+          <td style="color:var(--text-muted)">Master orders older than this are not copied, so a restart never fires a backlog.</td>
+        </tr>
+        <tr>
+          <td class="ticker">FLASK_SECRET_KEY</td>
+          <td><span class="badge skip">set</span></td>
+          <td style="color:var(--text-muted)">Session signing. Its value is never displayed.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="color:var(--text-faint);font-size:12.5px;margin-top:12px">
+    Changing any of these means editing <code>.env</code> and restarting the app. That is
+    slower than a button, and it is the honest cost of having no database.
+  </p>
+</section>
+
+{% endblock %}

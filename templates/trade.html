@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}Trade{% endblock %}
+
+{% block body %}
+
+<div class="page-head">
+  <p class="eyebrow">Place an order</p>
+  <h1>Trade the master.</h1>
+  <p>This form places one order on <strong>{{ master.alias if master else 'the master account' }}</strong> and stops
+     there. The copier notices it on its next pass, exactly as it would notice an order
+     you placed on Alpaca&rsquo;s own site.</p>
+</div>
+
+{% if not master %}
+  <section>
+    <div class="notice bad">
+      <strong>No master account is configured</strong>, so there is nowhere to send an order.
+      Fill in ACCOUNT_1 in <code>.env</code> and restart the app.
+    </div>
+  </section>
+{% else %}
+
+{# What the BROKER said. Never what was sent -- a form that reports its own
+   submission announces success for a rejected order. #}
+{% if result %}
+  <section>
+    {% if result.ok %}
+      <div class="notice good">
+        <strong>{{ result.headline }}.</strong>
+        {{ result.order.side | capitalize }} {{ result.order.qty | shares }}
+        <span class="ticker">{{ result.order.symbol }}</span>
+        on {{ master.alias }} &mdash; status
+        <span class="badge {{ 'fill' if result.order.status == 'filled' else 'pending' }}">{{ result.order.status }}</span>
+        at {{ result.order.created_at | clock }}.
+        <br><br>
+        This is the master&rsquo;s order only. What the followers did with it is on the
+        <a href="{{ url_for('copier_page') }}" style="color:var(--accent)">Copier</a> page.
+      </div>
+    {% else %}
+      <div class="notice bad">
+        <strong>{{ result.headline }}.</strong> {{ result.detail }}
+        <br><br>Nothing was placed, on any account.
+      </div>
+    {% endif %}
+  </section>
+{% endif %}
+
+<section>
+  <h2 class="section-title">Order &mdash; equities, whole shares</h2>
+
+  <form class="form" method="post" id="order-form">
+
+    <div class="field">
+      <label for="symbol">Symbol</label>
+      <input type="text" id="symbol" name="symbol" value="{{ form.symbol }}"
+             autocomplete="off" spellcheck="false" placeholder="NVDA" required
+             oninput="this.value = this.value.toUpperCase()">
+    </div>
+
+    <div class="row-2">
+      <div class="field">
+        <label for="side">Side</label>
+        <select id="side" name="side">
+          <option value="buy" {{ 'selected' if form.side == 'buy' }}>Buy</option>
+          <option value="sell" {{ 'selected' if form.side == 'sell' }}>Sell</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="qty">Quantity &mdash; whole shares</label>
+        <input type="number" id="qty" name="qty" value="{{ form.qty }}" min="1" step="1" required>
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="field">
+        <label for="order_type">Order type</label>
+        <select id="order_type" name="order_type">
+          {% for code, label, _needs in order_types %}
+            <option value="{{ code }}" {{ 'selected' if form.order_type == code }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="time_in_force">Duration</label>
+        <select id="time_in_force" name="time_in_force">
+          {% for code, label in durations %}
+            <option value="{{ code }}" {{ 'selected' if form.time_in_force == code }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    {# Indented under the choice that summons them, so they read as part of the
+       order type rather than as fields that appeared from nowhere. Hidden AND
+       cleared when they do not apply: a stale limit price is an order nobody
+       intended. #}
+    <div class="dependent" id="dep-limit" hidden>
+      <p class="hint">Required by this order type.</p>
+      <div class="field" style="margin-bottom:0">
+        <label for="limit_price">Limit price</label>
+        <input type="number" id="limit_price" name="limit_price" value="{{ form.limit_price }}" step="0.01" min="0">
+      </div>
+    </div>
+
+    <div class="dependent" id="dep-stop" hidden>
+      <p class="hint">Required by this order type.</p>
+      <div class="field" style="margin-bottom:0">
+        <label for="stop_price">Stop price</label>
+        <input type="number" id="stop_price" name="stop_price" value="{{ form.stop_price }}" step="0.01" min="0">
+      </div>
+    </div>
+
+    <button type="button" class="btn primary" id="review">Review order</button>
+    <p style="color:var(--text-faint);font-size:12.5px;margin-top:16px">
+      Paper account. These are simulated orders, and nothing here is advice.
+    </p>
+  </form>
+</section>
+
+{# Nothing reaches the broker until this is confirmed. A real order on a real
+   (paper) account is worth one extra click to catch a mis-typed quantity. #}
+<div class="modal" id="preview" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="preview-sentence">
+    <p class="eyebrow">Confirm this order</p>
+    <p class="sentence" id="preview-sentence"></p>
+    <p class="consequence" id="preview-consequence"></p>
+    <div class="actions">
+      <button type="button" class="btn ghost" id="cancel">Cancel</button>
+      <button type="button" class="btn primary" id="confirm">Place order</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+    var form = document.getElementById('order-form');
+    var type = document.getElementById('order_type');
+    var depLimit = document.getElementById('dep-limit');
+    var depStop = document.getElementById('dep-stop');
+    var limit = document.getElementById('limit_price');
+    var stop = document.getElementById('stop_price');
+    var modal = document.getElementById('preview');
+
+    // Rendered by the server, so the modal names the real accounts rather than
+    // describing them in the abstract.
+    var MASTER = {{ master.alias | tojson }};
+    var FOLLOWERS = {{ follower_summary | tojson }};
+
+    var NEEDS = {
+        market: [],
+        limit: ['limit'],
+        stop: ['stop'],
+        stop_limit: ['limit', 'stop']
+    };
+
+    function sync() {
+        var needs = NEEDS[type.value] || [];
+        var wantsLimit = needs.indexOf('limit') !== -1;
+        var wantsStop = needs.indexOf('stop') !== -1;
+        depLimit.hidden = !wantsLimit;
+        depStop.hidden = !wantsStop;
+        // Cleared, not just hidden.
+        if (!wantsLimit) { limit.value = ''; }
+        if (!wantsStop) { stop.value = ''; }
+        limit.required = wantsLimit;
+        stop.required = wantsStop;
+    }
+
+    type.addEventListener('change', sync);
+    sync();
+
+    function sentence() {
+        var side = document.getElementById('side').value === 'buy' ? 'Buy' : 'Sell';
+        var qty = document.getElementById('qty').value;
+        var symbol = document.getElementById('symbol').value.toUpperCase();
+        var kind = { market: 'at market', limit: 'at a limit of ' + limit.value,
+                     stop: 'with a stop at ' + stop.value,
+                     stop_limit: 'stop ' + stop.value + ', limit ' + limit.value }[type.value];
+        var tif = document.getElementById('time_in_force');
+        var duration = tif.options[tif.selectedIndex].text.split(' --')[0].toLowerCase();
+        return side + ' ' + qty + ' ' + symbol + ' ' + kind + ', ' + duration + '.';
+    }
+
+    document.getElementById('review').addEventListener('click', function () {
+        if (!form.reportValidity()) { return; }
+        document.getElementById('preview-sentence').textContent = sentence();
+        document.getElementById('preview-consequence').textContent =
+            'This goes to ' + MASTER + ', the master account.' +
+            (FOLLOWERS.length
+                ? ' Each follower then copies it at its own sizing: ' + FOLLOWERS.join(', ') + '.'
+                : ' There are no followers configured, so nothing will copy it.');
+        modal.hidden = false;
+    });
+
+    document.getElementById('cancel').addEventListener('click', function () {
+        modal.hidden = true;
+    });
+
+    document.getElementById('confirm').addEventListener('click', function () {
+        modal.hidden = true;
+        form.submit();
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') { modal.hidden = true; }
+    });
+})();
+</script>
+
+{% endif %}
+{% endblock %}

@@ -1,6 +1,6 @@
 ---
 name: skill-broker-api
-description: Build this project's broker layer — the one module every other part of the app goes through to reach Alpaca's paper API, covering the four calls this build needs, the stamp that makes copying idempotent, and what Alpaca actually returns. Use when the broker layer needs building, fixing, or extending.
+description: Build this project's broker layer — the one module every other part of the app goes through to reach Alpaca's paper API, covering the calls this build needs, the stamp that makes copying idempotent, and what Alpaca actually returns. Use when the broker layer needs building, fixing, or extending.
 ---
 
 # Broker API
@@ -42,10 +42,10 @@ a module-level client** configured once at import: this app talks to several
 accounts, and a single shared client is how a follower's order gets placed in the
 master. Take the account as an argument and build the request from it.
 
-### The four calls
+### The calls
 
-That is the whole surface. If a fifth is being added, the piece that wants it
-almost certainly should not.
+Four for the copier, and one more for the dashboard. That is the whole surface. If a fifth is being added, the piece
+that wants it almost certainly should not — with one named exception, below.
 
 1. **List an account's orders.** `GET /v2/orders`. It returns **open orders
    only** unless asked otherwise, which is the trap: pass `status=all` and a
@@ -56,6 +56,20 @@ almost certainly should not.
    time in force — and the stamp below.
 4. **Read one order back by its stamp.** So a copy can be checked for without
    pulling and scanning a whole history each pass.
+5. **Read the account itself.** `GET /v2/account`. The named exception, because
+   the dashboard has to show cash, buying power and whether an account's
+   credentials still work, and none of that is derivable from orders or
+   positions. It doubles as the harmless question asked once at startup to tell
+   a wrong key from a right one. It exists for the dashboard, not the copier —
+   nothing in the copy loop needs it.
+
+   Two fields in its reply explain failures that otherwise look impossible:
+   **`buying_power` can be zero while `cash` is six figures**, and
+   **`admin_configurations` can carry a `restrict_to_liquidation_reasons`
+   entry** — an account flagged that way accepts every sell and refuses every
+   buy, while reporting `status: ACTIVE` with nothing blocked. Surface both
+   rather than reporting only the status, or the account looks perfectly
+   healthy right up until the first order is refused.
 
 ### The stamp — `client_order_id`
 

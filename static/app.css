@@ -1,0 +1,758 @@
+/* ===========================================================================
+   Copy trader dashboard -- dark editorial minimalism.
+
+   Every theme colour is a custom property in the single :root block below, so
+   re-theming is a one-place edit.
+
+   CONTRAST, MEASURED RATHER THAN EYEBALLED (WCAG, against the surface behind
+   each one). The accent is a yellow, which is the hardest family to keep
+   legible on near-black, so it is brightened until it clears AAA:
+
+     off-white text on canvas   16.41:1   AAA
+     accent yellow on surface   13.14:1   AAA
+     fill green on surface      10.64:1   AAA
+     pending grey on surface     7.55:1   AAA
+     reject red on surface       6.70:1   AA
+     muted text on surface       5.31:1   AA
+
+   COLOUR IS SEMANTIC, NEVER DECORATIVE. This page is scanned rather than read,
+   so green means a fill and red means a rejection or a refusal, everywhere,
+   without exception. The accent is brand and navigation only -- it never
+   carries the meaning of an outcome.
+   =========================================================================== */
+
+:root {
+    /* Canvas and surfaces -- warm near-black, never pure #000 */
+    --canvas: #0c0c0e;
+    --surface: #131316;
+    --surface-raised: #17171b;
+    --surface-sunken: #0f0f11;
+
+    /* Structure: 1px hairlines, never shadows doing a border's job */
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.14);
+
+    /* Type -- warm off-white, never pure #FFF */
+    --text: #edebe7;
+    --text-muted: #8b8985;
+    --text-faint: #5c5b58;
+
+    /* The broker's signature accent, brightened for a near-black ground */
+    --accent: #ffd60a;
+    --accent-tint: rgba(255, 214, 10, 0.11);
+    --accent-edge: rgba(255, 214, 10, 0.28);
+
+    /* Trading semantics. Absolute. */
+    --fill: #4ade80;
+    --fill-tint: rgba(74, 222, 128, 0.11);
+    --reject: #f87171;
+    --reject-tint: rgba(248, 113, 113, 0.11);
+    --pending: #a8a5a0;
+    --pending-tint: rgba(168, 165, 160, 0.10);
+
+    /* Editorial type stack -- no Inter, no Roboto, no Open Sans */
+    --sans: "SF Pro Display", "Geist Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --serif: "Instrument Serif", "Newsreader", "Lyon Text", "Playfair Display", Georgia, serif;
+    --mono: "Geist Mono", "SF Mono", ui-monospace, "JetBrains Mono", Menlo, monospace;
+
+    --radius: 10px;
+    --radius-sm: 5px;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* A single very slow ambient wash, fixed and inert, so large dark areas are
+   not flat voids. No gradients anywhere else. */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background: radial-gradient(
+        60rem 40rem at 78% -10%,
+        rgba(255, 214, 10, 0.035),
+        transparent 70%
+    );
+}
+
+a {
+    color: inherit;
+}
+
+/* --- Frame ------------------------------------------------------------- */
+
+.shell {
+    position: relative;
+    z-index: 1;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 32px 96px;
+}
+
+.masthead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px 32px;
+    padding: 40px 0 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+.wordmark {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    font-family: var(--serif);
+    font-size: 26px;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    text-decoration: none;
+}
+
+.wordmark .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    transform: translateY(-4px);
+}
+
+.paper-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-tint);
+    border: 1px solid var(--accent-edge);
+    border-radius: 9999px;
+    padding: 3px 10px;
+    white-space: nowrap;
+}
+
+.nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 14px 0 0;
+}
+
+.nav a {
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    letter-spacing: 0.01em;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.nav a:hover {
+    color: var(--text);
+    background: var(--surface);
+}
+
+.nav a.current {
+    color: var(--text);
+    background: var(--surface-raised);
+    border-color: var(--border-strong);
+}
+
+.nav a.current::before {
+    content: "";
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 8px;
+    transform: translateY(-2px);
+}
+
+/* --- Page heads -------------------------------------------------------- */
+
+.page-head {
+    padding: 56px 0 8px;
+    max-width: 62ch;
+}
+
+.page-head h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(34px, 5vw, 46px);
+    letter-spacing: -0.03em;
+    line-height: 1.08;
+    margin: 0 0 12px;
+}
+
+.page-head p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 15px;
+}
+
+.eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin: 0 0 14px;
+}
+
+section {
+    margin-top: 56px;
+}
+
+h2.section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    font-weight: 400;
+    margin: 0 0 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* --- Cards / bento ----------------------------------------------------- */
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 26px 28px;
+}
+
+.grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.stat {
+    font-family: var(--mono);
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    color: var(--text);
+}
+
+.stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 8px;
+}
+
+/* --- Badges ------------------------------------------------------------ */
+
+.badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    border-radius: 9999px;
+    padding: 3px 10px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.badge.fill {
+    color: var(--fill);
+    background: var(--fill-tint);
+    border-color: rgba(74, 222, 128, 0.26);
+}
+
+.badge.reject {
+    color: var(--reject);
+    background: var(--reject-tint);
+    border-color: rgba(248, 113, 113, 0.26);
+}
+
+.badge.pending {
+    color: var(--pending);
+    background: var(--pending-tint);
+    border-color: rgba(168, 165, 160, 0.22);
+}
+
+.badge.skip {
+    color: var(--text-muted);
+    background: transparent;
+    border-color: var(--border-strong);
+}
+
+.badge.idle {
+    color: var(--text-faint);
+    background: transparent;
+    border-color: var(--border);
+}
+
+.badge.accent {
+    color: var(--accent);
+    background: var(--accent-tint);
+    border-color: var(--accent-edge);
+}
+
+/* --- Account identity: master vs follower, legible without reading ------ */
+
+.who {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.who .name {
+    font-size: 15px;
+    letter-spacing: -0.01em;
+}
+
+.who.master .name {
+    font-family: var(--serif);
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    color: var(--text);
+}
+
+.who.master .rule-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex: none;
+}
+
+.who.follower .name {
+    color: var(--text);
+}
+
+.who.follower .rule-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 1px solid var(--border-strong);
+    flex: none;
+}
+
+.sizing {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+}
+
+/* --- Tables ------------------------------------------------------------ */
+
+.table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    font-weight: 400;
+    text-align: left;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+td {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+td.num,
+th.num {
+    font-family: var(--mono);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.ticker {
+    font-family: var(--mono);
+    letter-spacing: 0.04em;
+}
+
+.time {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.side-buy {
+    color: var(--text);
+}
+
+.side-sell {
+    color: var(--text-muted);
+}
+
+/* --- The fan-out: one master order, its copies beside it ---------------- */
+
+.fanout {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.trade-row {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    overflow: hidden;
+}
+
+.trade-row .origin {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 18px;
+    padding: 18px 24px;
+    background: var(--surface-raised);
+    border-bottom: 1px solid var(--border);
+    /* The master's row carries the accent edge; followers do not. The
+       hierarchy is the information. */
+    border-left: 2px solid var(--accent);
+}
+
+.trade-row .origin .headline {
+    font-family: var(--serif);
+    font-size: 21px;
+    letter-spacing: -0.02em;
+}
+
+.copies {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.copy {
+    padding: 16px 24px;
+    border-right: 1px solid var(--border);
+    border-top: 1px solid transparent;
+}
+
+.copy:last-child {
+    border-right: none;
+}
+
+.copy .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.copy .reason {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-top: 6px;
+}
+
+.copy .qty {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+}
+
+.arrow {
+    color: var(--text-faint);
+    font-family: var(--mono);
+}
+
+/* --- Notices ----------------------------------------------------------- */
+
+.notice {
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    padding: 16px 20px;
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.notice strong {
+    color: var(--text);
+    font-weight: 500;
+}
+
+.notice.warn {
+    border-left-color: var(--accent);
+}
+
+.notice.bad {
+    border-left-color: var(--reject);
+}
+
+.notice.good {
+    border-left-color: var(--fill);
+}
+
+.empty {
+    padding: 40px 28px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.empty .lead {
+    font-family: var(--serif);
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* --- Forms ------------------------------------------------------------- */
+
+.form {
+    max-width: 560px;
+}
+
+.field {
+    margin-bottom: 22px;
+}
+
+label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 8px;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+    width: 100%;
+    background: var(--surface-sunken);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 15px;
+    padding: 11px 14px;
+    transition: border-color 160ms ease;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+select {
+    appearance: none;
+    cursor: pointer;
+}
+
+.row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+/* Dependent fields are INDENTED under the choice that summons them, with a
+   left brand border, so they read as belonging to the order type rather than
+   as two more fields that appeared from nowhere. */
+.dependent {
+    margin: -6px 0 22px;
+    padding: 18px 0 2px 20px;
+    border-left: 2px solid var(--accent-edge);
+}
+
+.dependent[hidden] {
+    display: none;
+}
+
+.dependent .hint {
+    font-size: 12px;
+    color: var(--text-faint);
+    margin: -12px 0 16px;
+}
+
+.btn {
+    font-family: var(--sans);
+    font-size: 14px;
+    letter-spacing: 0.01em;
+    border-radius: var(--radius-sm);
+    padding: 12px 22px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 160ms ease, transform 120ms ease, border-color 160ms ease;
+}
+
+.btn.primary {
+    background: var(--accent);
+    color: #0c0c0e;
+    font-weight: 500;
+}
+
+.btn.primary:hover {
+    background: #ffe14d;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn.ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border-color: var(--border-strong);
+}
+
+.btn.ghost:hover {
+    color: var(--text);
+    border-color: var(--text-faint);
+}
+
+/* --- Preview modal ----------------------------------------------------- */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(6, 6, 8, 0.7);
+    backdrop-filter: blur(3px);
+}
+
+.modal[hidden] {
+    display: none;
+}
+
+.modal .sheet {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    max-width: 480px;
+    width: 100%;
+    padding: 32px;
+    animation: rise 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal .sentence {
+    font-family: var(--serif);
+    font-size: 26px;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    margin: 14px 0 18px;
+}
+
+.modal .consequence {
+    color: var(--text-muted);
+    font-size: 14px;
+    border-top: 1px solid var(--border);
+    padding-top: 18px;
+    margin-bottom: 26px;
+}
+
+.modal .actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* --- Motion: present, never distracting -------------------------------- */
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.enter {
+    animation: rise 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--index, 0) * 60ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .enter,
+    .modal .sheet {
+        animation: none;
+    }
+}
+
+/* --- Footer ------------------------------------------------------------ */
+
+.footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--text-faint);
+}
+
+@media (max-width: 720px) {
+    .shell {
+        padding: 0 18px 64px;
+    }
+    .row-2 {
+        grid-template-columns: 1fr;
+    }
+}

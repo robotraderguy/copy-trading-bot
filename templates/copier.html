@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% block title %}Copier{% endblock %}
+
+{% block body %}
+
+<div class="page-head">
+  <p class="eyebrow">The copier</p>
+  <h1>One trade, every account.</h1>
+  <p>Each row is an order placed on the master. Beside it is what became of that
+     order in every follower, at that follower&rsquo;s own sizing.</p>
+</div>
+
+{# --- Is the loop actually alive? A page that looks calm because the worker
+       died twenty minutes ago is the worst screen this app could show. --- #}
+<section>
+  <div class="grid">
+    <div class="card enter" style="--index:0">
+      <div class="stat-label">Copy loop</div>
+      {% if state.stopped_reason %}
+        <div class="stat" style="color:var(--reject)">Stopped</div>
+        <p class="reason" style="margin-top:8px;color:var(--text-muted);font-size:13px">{{ state.stopped_reason }}</p>
+      {% elif not state.last_pass_at %}
+        <div class="stat" style="color:var(--pending)">Not run yet</div>
+        <p style="margin-top:8px;color:var(--text-muted);font-size:13px">No pass has completed since this process started.</p>
+      {% else %}
+        <div class="stat">Ran {{ state.last_pass_at | ago }}</div>
+        <p style="margin-top:8px;color:var(--text-muted);font-size:13px">
+          {{ state.pass_count }} passes, every {{ poll_seconds | int }}s.
+        </p>
+      {% endif %}
+    </div>
+
+    <div class="card enter" style="--index:1">
+      <div class="stat-label">Copying</div>
+      {% if copying_enabled %}
+        <div class="stat" style="color:var(--fill)">On</div>
+        <p style="margin-top:8px;color:var(--text-muted);font-size:13px">
+          New master orders are being mirrored into every follower.
+        </p>
+      {% else %}
+        <div class="stat">Off</div>
+        <p style="margin-top:8px;color:var(--text-muted);font-size:13px">
+          <strong style="color:var(--text)">COPYING_ENABLED</strong> is off, so no new copies are placed.
+          It does not cancel orders already placed, and does not close positions already opened.
+        </p>
+      {% endif %}
+    </div>
+
+    <div class="card enter" style="--index:2">
+      <div class="stat-label">Accounts</div>
+      <div class="stat">1 master &middot; {{ followers | length }} follower{{ '' if followers | length == 1 else 's' }}</div>
+      <p style="margin-top:8px;color:var(--text-muted);font-size:13px">
+        Orders older than {{ stale_order_seconds | int }}s are not copied.
+      </p>
+    </div>
+  </div>
+</section>
+
+{% if problems %}
+  <div class="notice warn" style="margin-top:24px">
+    <strong>{{ problems | length }} configured slot{{ '' if problems | length == 1 else 's' }} could not be used</strong>
+    and {{ 'is' if problems | length == 1 else 'are' }} not copying.
+    See <a href="{{ url_for('accounts_page') }}" style="color:var(--accent)">Accounts</a> for the reason and the setting to fix.
+  </div>
+{% endif %}
+
+{% if master_error %}
+  <div class="notice bad" style="margin-top:24px">
+    <strong>The master account could not be read.</strong> {{ master_error }}
+    &mdash; there is nothing to copy from until this clears.
+  </div>
+{% endif %}
+
+{% if not master %}
+  <section>
+    <div class="table-wrap">
+      <div class="empty">
+        <span class="lead">No master account</span>
+        ACCOUNT_1 in <code>.env</code> is the account you trade by hand. Until it is filled in,
+        there is nothing for this page to show.
+      </div>
+    </div>
+  </section>
+
+{% else %}
+
+  <section>
+    <h2 class="section-title">Master &mdash; {{ master.alias }}</h2>
+
+    {% if not followers %}
+      <div class="notice warn">
+        <strong>This copier has a master and nothing to copy into.</strong>
+        Add ACCOUNT_2_ALIAS, ACCOUNT_2_KEY and ACCOUNT_2_SECRET to <code>.env</code>
+        and restart the app. Orders below are the master&rsquo;s own.
+      </div>
+    {% endif %}
+
+    {% if not rows %}
+      <div class="table-wrap">
+        <div class="empty">
+          <span class="lead">No orders on the master yet</span>
+          Place one on the <a href="{{ url_for('trade_page') }}" style="color:var(--accent)">Trade</a> page,
+          or in Alpaca&rsquo;s own site &mdash; the copier treats both the same way.
+        </div>
+      </div>
+    {% else %}
+
+      <div class="fanout">
+        {% for row in rows %}
+          {% set o = row.order %}
+          <article class="trade-row enter" style="--index:{{ loop.index0 }}">
+
+            {# The master's order: the unit of this display. #}
+            <div class="origin">
+              <div class="who master">
+                <span class="rule-dot"></span>
+                <span class="name">{{ master.alias }}</span>
+              </div>
+              <span class="headline">
+                <span class="{{ 'side-buy' if o.side == 'buy' else 'side-sell' }}">{{ o.side | capitalize }}</span>
+                {{ o.qty | shares }} <span class="ticker">{{ o.symbol }}</span>
+              </span>
+              <span class="badge {{ 'fill' if o.status == 'filled' else 'reject' if o.status in dead else 'pending' }}">{{ o.status }}</span>
+              <span class="time">{{ o.created_at | clock }}</span>
+              {% if o.client_order_id and o.client_order_id.startswith('copy-') %}
+                <span class="badge accent">placed by this app</span>
+              {% endif %}
+            </div>
+
+            {# ...and its copies, reading across. #}
+            {% if followers %}
+              <div class="copies">
+                {% for copy in row.copies %}
+                  {% set s = copy.state %}
+                  <div class="copy">
+                    <div class="head">
+                      <div class="who follower">
+                        <span class="rule-dot"></span>
+                        <span class="name">{{ copy.follower.alias }}</span>
+                      </div>
+                      <span class="badge {{ s.tone }}">{{ s.label }}</span>
+                    </div>
+                    <div class="qty">
+                      {% if s.qty %}
+                        <span class="arrow">&rarr;</span>
+                        {{ s.qty | shares }} {{ o.symbol }}
+                        {% if s.price %}<span style="color:var(--text-muted)"> @ {{ s.price | money }}</span>{% endif %}
+                      {% else %}
+                        <span style="color:var(--text-faint)">&mdash;</span>
+                      {% endif %}
+                    </div>
+                    <div class="sizing">{{ copy.follower.sizing_description }}</div>
+                    {% if s.detail %}<div class="reason">{{ s.detail }}</div>{% endif %}
+                    {% if follower_errors.get(copy.follower.slot) %}
+                      <div class="reason" style="color:var(--reject)">
+                        This account could not be read: {{ follower_errors[copy.follower.slot] }}
+                      </div>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+          </article>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </section>
+
+  {# Divergences: a follower out of step with the master. Detected and
+     reported; this build never unwinds one automatically. #}
+  {% if state.divergences %}
+    <section>
+      <h2 class="section-title">Out of step</h2>
+      <div class="table-wrap">
+        <table>
+          <tbody>
+            {% for d in state.divergences %}
+              <tr><td>{{ d.detail }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p style="color:var(--text-faint);font-size:12.5px;margin-top:12px">
+        Nothing here is reconciled automatically &mdash; reconciling a divergence is out of scope for this build.
+      </p>
+    </section>
+  {% endif %}
+
+  <section>
+    <h2 class="section-title">Recent copies placed by this process</h2>
+    {% if state.events %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Time</th><th>Account</th><th>Order</th><th>Detail</th></tr>
+          </thead>
+          <tbody>
+            {% for e in state.events | reverse %}
+              <tr>
+                <td class="time">{{ e.at | clock }}</td>
+                <td>{{ e.alias }}</td>
+                <td class="ticker">{{ e.side }} {{ e.qty | shares }} {{ e.symbol }}</td>
+                <td style="color:var(--text-muted)">{{ e.detail }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="table-wrap">
+        <div class="empty">
+          <span class="lead">Nothing copied since this process started</span>
+          There is no database, so this list is held in memory and empties on every restart.
+          Copies placed before then still exist &mdash; they are stamped at the broker, which is
+          how the rows above are built.
+        </div>
+      </div>
+    {% endif %}
+  </section>
+
+{% endif %}
+
+{% endblock %}

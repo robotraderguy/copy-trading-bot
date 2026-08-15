@@ -307,6 +307,20 @@ So:
 - **Try again, but not immediately, and not forever.** A refusal that is really
   a refusal will be refused again; a failure that was the network deserves
   another go. Back off between attempts, cap them, and stop.
+- **"Cap them" means across passes, not just within one.** A cap that resets
+  every pass is not a cap: the order stays a candidate until it ages out, so a
+  refusal that will never succeed gets re-sent on every pass for as long as the
+  stale window lasts — dozens of identical submissions for one order, each one
+  a broker call spent on a decision already made. **Remember that a particular
+  copy was refused, and stop trying it**, rather than rediscovering the same
+  refusal every few seconds.
+- **Separate the two kinds of failure, because they want opposite treatment.**
+  A broker's *refusal* — no buying power, asset not tradable, quantity invalid —
+  is a decision about this order and will be identical next time; record it once
+  and leave it alone. A *transport* failure — a timeout, a reset, a rate limit —
+  says nothing about the order at all and deserves another go. Treating a
+  refusal as retryable is what produces the flood above; treating a timeout as
+  final silently drops a copy that would have worked.
 - **Every attempt is recorded, with the broker's own words.** "Copy failed" is
   useless. "Follower *Roth*: rejected — insufficient buying power" is the whole
   value of the log.

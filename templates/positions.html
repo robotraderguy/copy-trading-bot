@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Positions{% endblock %}
+
+{% block body %}
+
+<div class="page-head">
+  <p class="eyebrow">Positions</p>
+  <h1>What each account holds.</h1>
+  <p>This is the page that shows a follower drifting out of step with the master &mdash;
+     a holding on one side that has no match on the other.</p>
+</div>
+
+{% if not groups %}
+  <section>
+    <div class="table-wrap">
+      <div class="empty">
+        <span class="lead">No accounts configured</span>
+        Fill in ACCOUNT_1 in <code>.env</code> and restart the app.
+      </div>
+    </div>
+  </section>
+{% endif %}
+
+{% for group in groups %}
+  <section>
+    <h2 class="section-title">
+      {{ group.account.alias }} &mdash; {{ 'master' if group.is_master else 'follower' }}
+    </h2>
+
+    {% if group.error %}
+      <div class="notice bad">
+        <strong>This account could not be read.</strong> {{ group.error }}
+      </div>
+    {% elif not group.positions %}
+      <div class="table-wrap">
+        <div class="empty">
+          <span class="lead">Flat</span>
+          This account holds nothing. An empty account is an ordinary state, not a failure.
+        </div>
+      </div>
+    {% else %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticker</th><th>Side</th><th class="num">Shares</th>
+              <th class="num">Average entry</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for position in group.positions %}
+              <tr>
+                <td class="ticker">{{ position.symbol }}</td>
+                <td>
+                  {# Long and short are facts about the holding, not outcomes,
+                     so neither gets the green or the red. #}
+                  <span class="badge skip">{{ position.side }}</span>
+                </td>
+                <td class="num">{{ position.qty | shares }}</td>
+                <td class="num">{{ position.avg_entry_price | money }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </section>
+{% endfor %}
+
+{% endblock %}

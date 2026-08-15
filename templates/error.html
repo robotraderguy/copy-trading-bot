@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Something failed{% endblock %}
+
+{% block body %}
+
+<div class="page-head">
+  <p class="eyebrow">This page did not render</p>
+  <h1>Something failed here.</h1>
+  <p>The rest of the app is unaffected &mdash; the copy loop runs independently of these
+     pages, so whatever went wrong here has not stopped it.</p>
+</div>
+
+<section>
+  <div class="notice bad">
+    <strong>What went wrong:</strong> {{ detail }}
+    <br><br>
+    The full trace is in the app&rsquo;s log, which is where the answer will be. Guessing at
+    the cause from this page is exactly the habit that turns five minutes into an afternoon.
+  </div>
+  <p style="margin-top:20px">
+    <a href="{{ url_for('copier_page') }}" class="btn ghost" style="text-decoration:none">Back to the copier</a>
+  </p>
+</section>
+
+{% endblock %}

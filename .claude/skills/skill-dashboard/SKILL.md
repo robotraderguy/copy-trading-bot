@@ -243,5 +243,14 @@ The owner films this. Two rules follow, and they are not styling preferences:
 - **Nothing here is worth a client runtime.** If a requirement seems to call for
   live updates, re-read the spec — a reload is the refresh mechanism, and adding
   polling is the easiest way to drift out of scope without noticing.
+- **The predictable first experience of this dashboard is "it didn't copy".**
+  A copy takes up to one poll interval to appear, and the page does not refresh
+  itself — so anyone who places a trade and looks straight at the Copier page
+  sees a row saying nothing was copied, and concludes the app is broken. It is
+  the single most likely wrong conclusion this build produces. The render
+  stamp exists for exactly this, so make it easy to notice and phrase the
+  not-yet-copied state as *not yet* rather than as a verdict. Say the reload
+  requirement out loud when demonstrating rather than letting a viewer work it
+  out from a screen that looks like a failure.
 
 # END

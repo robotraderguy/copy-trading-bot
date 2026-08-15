@@ -2,204 +2,140 @@
 
 <a href="https://www.youtube.com/@RoboTraderGuy"><img src="docs/robotraderguy.png" alt="RoboTraderGuy — build trading bots with AI" width="540"></a>
 
-# 🚀 Build it yourself — the `start` branch
+# 🔁 One Trade → Every Account
 
-**The launchpad for a RoboTraderGuy build: the skills, the machine setup, and nothing else. The app gets written in front of you.**
+**Copy-trading for Alpaca paper accounts — one order on the master, mirrored to every follower and sized by a
+multiplier you set. Built entirely with AI.**
 
 ![Python](https://img.shields.io/badge/Python-3.13-blue?logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3.1-000000?logo=flask&logoColor=white)
 ![Broker](https://img.shields.io/badge/Broker-Alpaca%20Paper-FFD700)
+![Heroku](https://img.shields.io/badge/Deploy-Heroku-430098?logo=heroku&logoColor=white)
 ![Built With](https://img.shields.io/badge/Built%20With-Claude%20Code-cc785c)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 <!-- PLACEHOLDER: swap the channel URL below for the direct video URL once the video is published. -->
-🎬 **Watch this get built:** **[▶️ YouTube — video coming soon](https://www.youtube.com/@RoboTraderGuy)** — every line written by AI, directed on camera, including the miss and the fix.
+🎬 **Watch this get built:** **[▶️ YouTube — video coming soon](https://www.youtube.com/@RoboTraderGuy)** — every line written by AI, directed on camera, including the misses and the fixes.
 
 </div>
 
 ---
 
+This is the **`main`** branch: the finished application. To build it yourself instead, start from
+[`start`](../../tree/start).
+
+---
+
 ## 📑 Table of Contents
 
-- [📋 What this is](#-what-this-is)
-- [🧠 How it gets built](#-how-it-gets-built)
-- [🌿 Which branch?](#-which-branch)
-- [▶️ Getting started](#%EF%B8%8F-getting-started)
-  - [🤖 First, install Claude Code](#-first-install-claude-code)
-  - [📋 The one thing you paste](#-the-one-thing-you-paste)
-  - [🏦 What you need before the build starts](#-what-you-need-before-the-build-starts)
-  - [🔑 One-time sign-ins (once per machine)](#-one-time-sign-ins-once-per-machine)
-- [⚠️ Disclaimer](#%EF%B8%8F-disclaimer)
-- [👤 Author](#-author)
+- [📋 Overview](#-overview)
+- [🌿 Which branch? (`start` vs `main`)](#-which-branch-start-vs-main)
+- [🏗️ Architecture](#️-architecture)
+- [🚀 Quick Start](#-quick-start)
+- [⚙️ Configuration](#️-configuration)
+- [📊 Dashboard Pages](#-dashboard-pages)
+- [🧩 The Skills](#-the-skills)
+- [🧱 What It Does / Doesn't Do](#-what-it-does--doesnt-do)
+- [☁️ Deployment](#️-deployment)
+- [👤 Author & Contact](#-author--contact)
+- [⚠️ Disclaimer](#️-disclaimer)
 - [📄 License](#-license)
 
 ---
 
-## 📋 What this is
+## 📋 Overview
 
-This repo is the companion to a build from the **RoboTraderGuy** channel
-(<https://www.youtube.com/@RoboTraderGuy>). What gets built here is a **trade
-copier**: you place one trade on a master account, and it mirrors itself into
-every follower account you've connected — same stock, same direction, sized the
-way you told each account to size it. A copy loop watches the master and does the
-mirroring; a dashboard shows one trade fanning out to the rest.
+If you run more than one account, every trade is the same trade typed several times — and the later ones fill at a
+worse price than the first.
 
-Every account involved is an Alpaca **paper** account.
+This project closes that gap. A Flask app watches your **master** Alpaca paper account for new orders and replays
+each one onto every **follower** account, scaled by that follower's multiplier. A five-page dashboard shows what
+copied, what didn't, and why.
 
-**The stack, so you know what you're getting into:** a **Flask** app in
-**Python**, talking to **Alpaca**, deployed to **Heroku** as a single always-on
-process — the web pages and the copy loop live in the same one. No database.
-That's the whole list; nothing else gets installed.
+Every line was written by Claude Code, directed by short plain-English prompts that invoke the reusable **skills**
+in [`.claude/skills/`](.claude/skills/). The human contribution is the direction: what to copy, what must never be
+copied twice, and where the scope ends.
 
-**Paper trading, on purpose.** Never point this build at a live-money account,
-and never treat any of it as trading advice. That warning is doing more work here
-than in most projects: a copier is a machine for placing the same order in
-several accounts at once, with nobody watching.
+> **Re-running these commands produces a slightly different build — and that's the point, not a flaw.** AI is
+> non-deterministic, so no two runs are byte-identical. That is exactly why the skill matters more than any single
+> output: you're learning to *direct* a build, not copy one frozen answer. The requirements are pinned in the
+> skills, so every run lands on the same working app — just assembled its own way.
 
 ---
 
-## 🧠 How it gets built
+## 🌿 Which branch? (`start` vs `main`)
 
-The premise of the channel, and of this repo, is that **the code isn't the
-valuable part** — it's free, and it's right here. The value is in *directing* the
-AI that writes it. So the way this gets built is the point, not an
-implementation detail:
+This repo has two branches, for two different goals. Ask Claude Code to clone whichever fits — you don't run git
+yourself.
 
-- **Direction is short and plain-English** — usually a single slash command like
-  `/skill-copy-trading`, sometimes one sentence naming a skill. No requirement
-  walls.
-- **The skills in [`.claude/skills/`](.claude/skills/) carry the specification.**
-  Every page, field, sizing rule, and failure behavior lives in a skill, under
-  its *"Local adaptations (this project)"* section.
-- **The AI does the work** — cloning, installing, building, running, deploying —
-  and reports back. You don't run the terminal commands yourself.
-
-If you find yourself typing a long requirements prompt, something has gone wrong:
-that requirement belongs in a skill, and it's probably already there.
-
----
-
-## 🌿 Which branch?
-
-| | `start` — **you are here** | `main` |
+| | `start` — **build it yourself** | `main` — **one finished build** |
 |---|---|---|
-| **What's in it** | The skills (the full spec), the machine bootstrap (`install/`), `.env.example`, and this README. **No app code.** | The complete working app — the output of the recorded session. |
-| **Use it to** | *Reproduce* the build and watch the app get generated. This is the teaching path. | *Run or deploy* the result as-is, or compare your build against one that works. |
+| **What's in it** | The skills (the full spec), the machine bootstrap (`install/`), `.env.example`, and a README. **No app code.** | The complete working app: `copier.py`, `broker.py`, `config.py`, `webapp.py`, templates, the deploy blueprint. |
+| **Use it to** | *Reproduce* the build — run the skills in order and watch the app get generated in front of you. This is the teaching path. | *Run or deploy* the app as-is. Also a build to compare your own against — one that works, not the right answer. |
+| **Who it's for** | Anyone following along, learning to direct the AI. | Anyone who wants the result, or a working baseline to modify. |
 
-> 🧭 **`main` is not the gold standard.** It's one build that works — one session,
-> one day, one model. Not a reference answer, not a grading key. If your build
-> meets the requirements and runs, it's exactly as valid, and it may be better.
-> Re-running the same commands never produces a byte-identical result, and that's
-> the point rather than a flaw: you're learning to direct a build, not to
-> copy-paste a frozen answer.
+> 🧭 **This branch is not the gold standard.** It's one build that works — what came out of one session, on one
+> day, from one model. Not a reference answer, and not a grading key. If your build satisfies the requirements and
+> runs, it is exactly as valid, and it may well be better. The **requirements** are the standard.
+
+**The skills on this branch carry the lessons from the recorded session.** After the build, `/skill-end` folded
+back what went wrong — the copy switch that defaults off, the config var the cloud inherits, the difference
+between an error the broker returns and one your own account caused. So `main`'s skills are a little smarter than
+`start`'s, which are the ones the video begins with.
 
 ---
 
-## ▶️ Getting started
+## 🏗️ Architecture
 
-> **Read every command before you run it — don't copy, paste, enter.** Some of
-> the blocks below, and some lines in `.env.example`, contain a value only you
-> know: your Windows username, your API keys, your account aliases. Those are
-> always written as something obviously fake — `YOUR-USERNAME`,
-> `your_paper_api_key_here` — so that a value you still have to supply looks
-> wrong on sight. Run one unedited and it fails in a way that reads like the
-> tool is broken rather than like a blank you didn't fill in. Where a command
-> is safe to paste exactly as written, this README says so.
->
-> This is also just the habit to have. You are about to run installers and, a
-> few steps later, software that can place real orders — pasting commands you
-> haven't read is how people find that out the expensive way.
+Four modules. No database — the accounts are numbered slots in `.env`, and what the copier must remember is
+stamped onto the orders themselves at the broker.
 
-### 🤖 First, install Claude Code
-
-Everything below is typed into Claude Code, so it has to exist before any of it
-means anything. Run the installer for your system:
-
-**macOS, Linux, or WSL**
-
-```bash
-curl -fsSL https://claude.ai/install.sh | bash
+```
+copytrade-alpaca/
+├── config.py          Reads .env into account slots; the only place settings are parsed
+├── broker.py          The only place this app talks to Alpaca (orders, positions, account)
+├── copier.py          The copy engine — polls the master, replays to followers, dedupes
+├── webapp.py          Flask app: five pages + the trade form
+├── templates/         base · copier · trade · accounts · orders · positions · error
+├── static/            One stylesheet (Alpaca-yellow accent, dark)
+├── install/           One-command machine bootstrap
+├── docs/              Screenshots used by this README
+├── .claude/skills/    The nine skills that generated all of the above
+├── Procfile           web: gunicorn webapp:app --workers 1 --threads 4
+└── requirements.txt   Flask · gunicorn · python-dotenv · requests
 ```
 
-**macOS, if you'd rather use Homebrew**
+**How a copy actually happens.** The copier polls the master account's orders every `POLL_SECONDS`. A new order
+is replayed to each follower with its quantity multiplied. To guarantee it never copies the same order twice
+without a database, it **stamps the master's order id onto the follower order's `client_order_id`** and reads it
+back — the broker itself becomes the record of what has been copied.
 
-```bash
-brew install --cask claude-code
-```
+Two consequences worth knowing before you run it:
 
-**Windows (PowerShell)**
+- **It copies on SUBMISSION, not on fill.** A follower order goes out as soon as the master's order exists,
+  rather than waiting for it to fill — which on a paper account can be hours.
+- **A copy appears up to one poll interval late.** With the default `POLL_SECONDS` the follower shows up a few
+  seconds after the master. That is the loop working, not a failure.
 
-```powershell
-irm https://claude.ai/install.ps1 | iex
-```
+---
 
-**Windows, if you'd rather use WinGet**
+## 🚀 Quick Start
 
-```text
-winget install Anthropic.ClaudeCode
-```
+**You don't run build commands yourself — you install one tool, then direct the AI.** That is the whole point: the
+code here was written by Claude Code, and you reproduce it the same way.
 
-Then confirm it landed:
-
-```bash
-claude --version
-```
-
-**If that says the command isn't recognized, the install worked and your PATH
-didn't.** The installer drops `claude` into `~/.local/bin` — on Windows that's
-`C:\Users\YOUR-USERNAME\.local\bin`, where `YOUR-USERNAME` is your actual
-Windows account name, not text to type literally. A terminal that was already
-open never learns about the new folder.
-
-On Windows the installer usually says exactly this itself, in a note that's
-easy to scroll past. It will show your real username where this shows
-`YOUR-USERNAME`:
-
-```text
-Setup notes:
-  ● Native installation exists but C:\Users\YOUR-USERNAME\.local\bin is not in
-    your PATH. Add it by opening: System Properties → Environment Variables →
-    Edit User PATH → New → Add the path above. Then restart your terminal.
-```
-
-That's real, and the click-path works — but you can do the same thing in one
-command. Nothing below needs your username typed in: `$env:USERPROFILE` and
-`$HOME` are variables the shell fills in with your own home folder, so these
-are copy-paste as-is.
-
-**Windows (PowerShell)**
-
-```powershell
-[Environment]::SetEnvironmentVariable(
-  "Path",
-  [Environment]::GetEnvironmentVariable("Path", "User") + ";$env:USERPROFILE\.local\bin",
-  "User")
-```
-
-**macOS, Linux, or WSL** — append to `~/.zshrc` or `~/.bashrc`:
-
-```bash
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-Then **open a new terminal** and run `claude --version` again. Both of these
-edit the profile, not the session you're standing in, so the window you typed
-them into will still say the command isn't recognized — that is not a second
-failure.
-
-Now start it by running `claude` in a terminal. The first launch walks you
-through signing in to your Anthropic account — it opens a browser, you approve,
-and you're done. **You need a paid Claude plan to build along**; the build is a
-long session and a free account won't carry it.
-
-> Installing is not signing in. If `claude --version` prints a version but the
-> tool asks you to authenticate later, that's the expected order, not a broken
-> install.
+1. **Install the two tools by hand** — [VS Code](https://code.visualstudio.com/download) and
+   [Claude Code](https://docs.anthropic.com/en/docs/claude-code/setup). Everything after that installs itself.
+2. **Get your accounts** (browser, one-time): two or more **Alpaca paper** accounts, and a **Heroku** account with
+   the CLI signed in.
+3. **Open Claude Code in an empty folder and direct it.** Paste the text below, then run the skills in order —
+   Claude installs the dependencies, builds each piece, and deploys for you.
+4. **Place one order on the master** from the Trade page and watch the followers fill.
 
 ### 📋 The one thing you paste
 
-Everything else in this build is a slash command, but the repo has to reach
-your machine before any skill can run — skills live *inside* it. So this is the
-only paste, and it is the same text as the one in the video description:
+Everything else in this build is a slash command, but the repo has to reach your machine before any skill can run —
+skills live *inside* it. So this is the only paste, and it is the same text as the one in the video description:
 
 ```text
 Set this folder up to build along with the video.
@@ -216,108 +152,151 @@ Then stop. Don't run any of the skills you find - I invoke those myself, one
 at a time. Don't build anything yet and don't plan the build.
 ```
 
-> The "INTO THIS FOLDER" wording matters. If the files land one level down, no
-> skill loads — and no skill can diagnose that, because the skills are exactly
-> what is missing.
+> The "INTO THIS FOLDER" wording matters. If the files land one level down, no skill loads — and no skill can
+> diagnose that, because the skills are exactly what is missing.
 
-Point Claude Code at this branch and run `/skill-init`. It'll tell you where you
-are, what's available, and then stop — the build happens one step at a time, and
-each step is a skill you invoke when the video reaches it.
+<details>
+<summary><b>Running THIS branch instead of building it</b></summary>
 
-### 🏦 What you need before the build starts
+`main` is the finished app, so there is nothing to build. Ask Claude Code to clone this branch, install the
+dependencies and start it — it reads a local `.env` if there is one and falls back to working defaults for
+everything except the account credentials.
 
-Two free accounts, and one of them has a wrinkle worth knowing about early:
+You still have to supply your own Alpaca keys; see [Configuration](#️-configuration).
 
-- **Alpaca** — paper trading. You need **more than one paper account**: one
-  master and at least one follower. A copier cannot be demonstrated with a single
-  account, and finding that out halfway through is a bad afternoon.
-- **Heroku** — where it ends up running. This one needs a payment method: the
-  copier has to stay awake whether or not anyone is looking at the dashboard, and
-  free tiers that sleep cannot do that job. The build says the real number out
-  loud when it gets there. It may also require the **Salesforce Authenticator**
-  app for two-factor sign-in (see the sign-in steps below) — install that on
-  your phone ahead of time.
+</details>
 
-There is **no database**. Every account — key, secret, alias, sizing rule — is a
-numbered slot in a `.env` file, and what the copier needs to remember it stamps
-onto the orders it places at the broker. That keeps this tier small enough to
-read in an evening, and its limits are named out loud in the video.
+<details>
+<summary><b>🏦 Getting your Alpaca paper accounts</b></summary>
 
-### 🔑 One-time sign-ins (once per machine)
+You need at least two — one master, one follower. In the Alpaca dashboard:
 
-None of this is needed to *get* the code — this repo is public, so cloning works
-signed out. It's needed later, when the build starts committing your work,
-pushing it to your own GitHub account, and deploying from there. These are the
-steps nobody can do on your behalf, because they're your accounts.
+- **Home** shows the API key for the account you are viewing, with a **Regenerate** button. The secret is shown
+  **once**, at creation or regeneration — if you did not copy it, regenerate and take the new pair.
+- **Account → Paper accounts** opens another. You can run up to three, which is why the `.env` has three slots.
 
-**1. Tell git who you are.** Git has no "login", but it refuses to make your
-first commit until it knows your name and address — if you skip this you'll hit
-`Please tell me who you are` mid-build:
+</details>
+
+---
+
+## ⚙️ Configuration
+
+Everything lives in `.env`. There is no settings page and no database.
+
+| Variable | What it does |
+|---|---|
+| `ACCOUNT_1_ALIAS` / `_KEY` / `_SECRET` | **Slot 1 is the MASTER** — the account you trade by hand |
+| `ACCOUNT_2_ALIAS` / `_KEY` / `_SECRET` | A follower |
+| `ACCOUNT_2_MULTIPLIER` | Size relative to the master (`2` → 100 on the master becomes 200) |
+| `ACCOUNT_2_FIXED_SHARES` | Optional: a flat share count that ignores the master's quantity |
+| `ACCOUNT_3_*` | A second follower, same shape. Unfilled slots are reported and skipped |
+| `COPYING_ENABLED` | The kill switch. **Must be `true` for anything to copy** |
+| `POLL_SECONDS` | How often the master is checked for new orders |
+| `STALE_ORDER_SECONDS` | Orders older than this are never copied — so starting the app doesn't replay history |
+| `FLASK_SECRET_KEY` | Session signing. **Set a real random value**, never the placeholder |
+
+> ⚠️ **`COPYING_ENABLED` defaults to `false`, and it is the first thing to check when nothing copies.** Setting it
+> locally is not enough — the cloud has its own copy of every variable, and it will happily inherit the same
+> `false`. Check both.
+
+---
+
+## 📊 Dashboard Pages
+
+| Page | Route | Shows |
+|---|---|---|
+| **Copier** | `/` | Master and followers, the kill-switch state, what was copied and when |
+| **Trade** | `/trade` | Place an order on the master — symbol, side, quantity, order type, duration. Previews before sending |
+| **Accounts** | `/accounts` | Who trades, who follows, and each account's buying power |
+| **Orders** | `/orders` | Recent orders across every account, newest first |
+| **Positions** | `/positions` | Open positions per account |
+
+The Trade page places the order and stops there; the copier picks it up on its next pass. Sending from the form
+*and* calling the engine directly would copy the same trade twice.
+
+---
+
+## 🧩 The Skills
+
+Nine skills in [`.claude/skills/`](.claude/skills/) generated this app. They are the actual spec — the app is
+their output.
+
+| Skill | Its job |
+|---|---|
+| `skill-init` | Loads the project, reads the README, inventories the skills, and stops |
+| `skill-install` | Reads the bootstrap scripts for anything malicious, explains them, then installs |
+| `skill-copy-trading` | The copy engine: dedupe, sizing, per-follower isolation, the kill switch |
+| `skill-broker-api` | Alpaca specifics — key + secret auth, paper base URL, the four endpoints used |
+| `skill-dashboard` | The five pages and the trade form |
+| `minimalist-ui` | Third-party design skill from the [taste-skill](https://github.com/lxlnx/taste-skill) repo |
+| `skill-deploy-cloud` | Procfile, gunicorn, the private repo, and the Heroku deploy |
+| `skill-creator` | Vendor skill, shipped unmodified |
+| `skill-end` | Harvests the session's lessons back into the skills above |
+
+---
+
+## 🧱 What It Does / Doesn't Do
+
+**It does:**
+
+- Copy whole-share equity orders from one master account to every configured follower, sized by that follower's
+  multiplier or a fixed share count.
+- Guarantee an order is copied exactly once, by stamping the master's order id onto the follower order and reading
+  it back from the broker.
+- Ignore anything older than `STALE_ORDER_SECONDS`, so starting the app never replays the day's history.
+- Keep followers independent — one account with bad credentials or no buying power does not stop the others.
+- Retry a failed submission with exponential backoff, and distinguish a rate limit from a refusal.
+- Show the copier, a trade form, accounts, orders and positions on five pages.
+
+**It doesn't:**
+
+- Touch real money. Alpaca **paper** is deliberate and permanent.
+- Copy anything but equities in whole shares — no options, no crypto, no fractional.
+- Wait for the master to fill. A copy goes out on submission, and lands within one poll interval.
+- Support more than one broker, or more than one user.
+
+Those absences are scope, not oversights. Each one is a decision recorded in the skills.
+
+---
+
+## ☁️ Deployment
+
+The app deploys to **Heroku** from a private GitHub repo, described by [`Procfile`](Procfile).
+
+| Setting | Value | Why |
+|---|---|---|
+| Runtime | Python | `.python-version` pins the version |
+| Start command | `gunicorn webapp:app` | A production web server, not Flask's development one |
+| Workers | **1** | One copier. A second worker would poll the same master and copy every order twice |
+| Threads | 4 | The pages stay responsive while the copy loop is mid-poll |
+| Plan | **Basic**, not Eco | See below |
+
+> ⚠️ **Why not the cheap plan.** Heroku has no free tier at all, and the **$5 Eco** dyno sleeps after about 30
+> minutes without traffic. A sleeping copier does not miss a cosmetic refresh — it misses the trade it exists to
+> mirror. **$7 Basic** stays awake, and that is what this build assumes.
+
+Secrets are set as Heroku **config vars**, never committed. The real `.env` stays out of git entirely.
+
+**The only thing you do by hand is sign in.** `/skill-deploy-cloud` creates the repo, pushes it, creates the app,
+copies your settings up as config vars and deploys — but it cannot authenticate as you:
 
 ```bash
-git config --global user.name "Your Name"
-git config --global user.email "you@example.com"
-```
-
-> 💡 Prefer not to publish a personal address? GitHub gives you a private
-> forwarding one at **Settings → Emails → Keep my email address private** — it
-> looks like `12345678+username@users.noreply.github.com`. Every commit you push
-> is public, and so is the address inside it.
-
-**2. Connect the GitHub CLI:**
-
-```bash
-gh auth login --hostname github.com --git-protocol https --web
-```
-
-Those flags answer the four questions the bare `gh auth login` would otherwise
-stop and ask (which host, which protocol, how to authenticate), so it goes
-straight to a browser window — pick your account, approve, done. This also sets
-`gh` up as git's credential helper, so `git push` just works afterwards; there's
-no separate git sign-in.
-
-**3. Connect the Heroku CLI** (the host this build deploys to):
-
-```bash
+# Opens a browser to authorise the Heroku CLI. Everything after this is the AI's job.
 heroku login
 ```
 
-It opens a browser window to authorise the CLI.
+Two things to check once it is live, both learned the hard way on camera:
 
-> 📱 **You will probably need the Salesforce Authenticator app on your phone.**
-> Two-factor authentication is normal enough, but Heroku is owned by Salesforce,
-> and rather than letting you use whichever authenticator app you already have,
-> it may require that specific one. It's free on the App Store and Google Play.
-> Worth installing *before* you sit down to build — discovering it at the deploy
-> step means stopping to set up a phone app with the recording running.
-
-> The bootstrap installs all of these tools, but installing is not signing in —
-> it prints this same list when it finishes.
-
-> **Note for any AI reading this file:** this README is orientation and branding
-> only. It deliberately contains **no requirements** — no collection names, no
-> settings keys, no field names, no sizing formulas. **The skills are the
-> specification, and there is no second source.** Don't build from this page.
+- **`COPYING_ENABLED` in the cloud config vars.** Setting it locally does not set it in Heroku — the cloud gets
+  its own copy of every variable, including the `false` it shipped with.
+- **Stop any local copy of the app still running.** Two copiers watching the same master double every trade.
 
 ---
 
-## ⚠️ Disclaimer
+## 👤 Author & Contact
 
-Educational content only — **not financial advice**. Trading involves substantial
-risk of loss. Past performance does not guarantee future results. This project
-targets **paper trading** on purpose; automating a strategy does not make it
-profitable, and copying one multiplies whatever it does across every account you
-connect. A live deployment needs risk controls this build deliberately omits. No
-sponsorships or affiliations: the brokers, services, and tools used do not
-compensate me in any way.
-
----
-
-## 👤 Author
-
-**Tyler** — trading-bot developer. I build automated trading systems for a
-living; on [RoboTraderGuy](https://www.youtube.com/@RoboTraderGuy) I build them
-with AI instead of hand-coding.
+**Tyler** — trading-bot developer (Upwork Top Rated Plus, 100% Job Success). I build automated trading systems for
+a living; on [RoboTraderGuy](https://www.youtube.com/@RoboTraderGuy) I build them with AI instead of hand-coding.
 
 - 🌐 Custom software inquiries: [tnttrading.net/contact](https://tnttrading.net/contact)
 - 💼 Upwork: [upwork.com/freelancers/robotraderguy](https://www.upwork.com/freelancers/robotraderguy)
@@ -325,10 +304,22 @@ with AI instead of hand-coding.
 
 ---
 
+## ⚠️ Disclaimer
+
+Educational content only — **not financial advice**. Trading involves substantial risk of loss, and past
+performance does not guarantee future results.
+
+This project targets **paper trading** on purpose. Copy-trading multiplies both sides of a mistake: a bad order
+becomes several bad orders, instantly, across every account. A live deployment needs the risk controls this build
+deliberately omits.
+
+No sponsorships or affiliations: the brokers, services, and tools used do not compensate me in any way.
+
+---
+
 ## 📄 License
 
-MIT — the code from every video on the channel is free to use, modify, and learn
-from. See [LICENSE](LICENSE).
+MIT — the code from every video on the channel is free to use, modify, and learn from. See [LICENSE](LICENSE).
 
 ---
 

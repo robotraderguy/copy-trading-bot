@@ -61,6 +61,19 @@ terminal, then update it and deploy.
   processes.** More than one worker means more than one copy loop, which means
   every trade copied more than once — pin it to a single worker, and say why in
   the config.
+  - **And check how it starts them, not just how many.** A server that
+    *preloads* the app imports it once and forks the workers from that image,
+    and **threads do not survive a fork** — so a copy loop started at import
+    lives in the parent and dies with it. The result is the worst-shaped
+    failure this build has: every page serves perfectly, the dyno reports
+    healthy, and nothing is ever copied. Whichever way the server is
+    configured, confirm the loop is running *inside the process that serves
+    the pages*.
+- **The default plan is the sleeping one.** Creating an app does not put it on
+  a plan that stays awake — hosts default to their cheapest tier, which is the
+  one that sleeps. **Set the plan explicitly as part of the deploy and read it
+  back**, rather than assuming the app landed somewhere always-on. It reports
+  itself as up either way.
 - **The deployed Python matches the local one.** Check what's actually
   installed rather than assuming, and pin it.
 - **Heroku is the host.** Just Heroku — don't generate config for other
@@ -75,6 +88,15 @@ terminal, then update it and deploy.
   that CLI in is a one-time thing the user does themselves; if it isn't signed in
   yet, say so and wait rather than working around it. Tell them the repo name
   you're using.
+  - **Check WHICH account it will be created under, and say so before creating
+    it.** The CLI can hold several signed-in accounts and quietly uses whichever
+    is active, which is not necessarily the one this project belongs to. Name
+    the owner as well as the repo, and confirm it against where the project's
+    other repos live rather than accepting the default.
+  - **A private repo is invisible to a browser signed in as anyone else**, so
+    "I only see two repos" is the expected result rather than a failed create.
+    Confirm existence and visibility from the terminal, and say which account
+    the user has to be signed in as to see it.
 - **Work out what the app actually reads — don't trust a list, including this
   one.** Search the finished code for every environment variable it looks up. The
   build may well have introduced settings beyond the ones `.env.example` started
@@ -88,6 +110,13 @@ terminal, then update it and deploy.
     wrong.
   - **Report any mismatch before deploying** — a variable the code reads that
     nothing supplies, or one supplied that nothing reads.
+  - **A local value that is still the example placeholder is UNSET, and
+    copying it to the host is worse than leaving it out.** Anything that
+    filters placeholders on the way through will drop such a variable silently,
+    and the host then falls back to whatever default the code has — which for a
+    session-signing key means a known, published one. Decide per variable:
+    generate a real value for the host, or stop and say it must be filled in.
+    Never let it pass unmentioned in either direction.
   - **Bring `.env.example` back in line** if the build added settings, so it
     still describes what this app needs. It's the only guide anyone else gets.
 - **Set them from the terminal.** Use the host's CLI rather than making the user
@@ -174,5 +203,17 @@ green build log.
   build.** Say the number out loud rather than letting the user discover it. A
   copier is one of the few small apps where the free tier genuinely cannot do the
   job, and being straight about that is worth more than the saving.
+- **Deploying does not stop the copy loop the user already has running
+  locally.** After a deploy there are two copiers watching one master, and if
+  both have copying switched on they race for the same orders. The stamp keeps
+  that from becoming duplicate trades, but relying on it to cover for a second
+  process nobody meant to leave running is not a plan. Say which copiers are
+  live and where, as part of handing back the URL.
+- **`git push` to the host can fail on the network rather than on the code.**
+  A "connection reset" that repeats identically, and reproduces with `curl`, is
+  not a credential problem and not something a retry fixes — antivirus and
+  corporate proxies commonly break HTTP/2 to specific hosts. Forcing HTTP/1.1
+  for that remote is the fix; diagnose it before assuming the deploy itself is
+  broken, and record the setting so the next push doesn't rediscover it.
 
 # END

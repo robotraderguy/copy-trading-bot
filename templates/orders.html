@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Orders{% endblock %}
+
+{% block body %}
+
+<div class="page-head">
+  <p class="eyebrow">Orders</p>
+  <h1>Every order, per account.</h1>
+  <p>Newest first, as the broker has them. For whether a particular master trade reached
+     every follower, the <a href="{{ url_for('copier_page') }}" style="color:var(--accent)">Copier</a>
+     page reads across instead of down.</p>
+</div>
+
+{% if not groups %}
+  <section>
+    <div class="table-wrap">
+      <div class="empty">
+        <span class="lead">No accounts configured</span>
+        Fill in ACCOUNT_1 in <code>.env</code> and restart the app.
+      </div>
+    </div>
+  </section>
+{% endif %}
+
+{% for group in groups %}
+  <section>
+    <h2 class="section-title">
+      {{ group.account.alias }} &mdash; {{ 'master' if group.is_master else 'follower' }}
+    </h2>
+
+    {% if group.error %}
+      <div class="notice bad">
+        <strong>This account could not be read.</strong> {{ group.error }}
+      </div>
+    {% elif not group.orders %}
+      <div class="table-wrap">
+        <div class="empty">
+          <span class="lead">No orders yet</span>
+          {% if group.is_master %}
+            Nothing has been traded on this account. That is also the ideal starting state
+            for the copier &mdash; there is no history for it to skip past.
+          {% else %}
+            Nothing has been copied into this account yet.
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th><th>Ticker</th><th>Side</th>
+              <th class="num">Qty</th><th class="num">Filled</th>
+              <th>Status</th><th class="num">Fill price</th><th>Origin</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in group.orders %}
+              <tr>
+                <td class="time">{{ order.created_at | clock }}</td>
+                <td class="ticker">{{ order.symbol }}</td>
+                <td class="{{ 'side-buy' if order.side == 'buy' else 'side-sell' }}">{{ order.side }}</td>
+                <td class="num">{{ order.qty | shares }}</td>
+                <td class="num">{{ order.filled_qty | shares }}</td>
+                <td>
+                  <span class="badge {{ 'fill' if order.status == 'filled' else 'reject' if order.status in dead else 'pending' }}">{{ order.status }}</span>
+                </td>
+                <td class="num">{{ order.filled_avg_price | money }}</td>
+                <td>
+                  {% if order.client_order_id and order.client_order_id.startswith('copy-') %}
+                    <span class="badge accent">copied</span>
+                  {% else %}
+                    <span class="badge skip">by hand</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </section>
+{% endfor %}
+
+{% endblock %}
