@@ -11,8 +11,7 @@
 ![Built With](https://img.shields.io/badge/Built%20With-Claude%20Code-cc785c)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-<!-- PLACEHOLDER: swap the channel URL below for the direct video URL once the video is published. -->
-🎬 **Watch this get built:** **[▶️ YouTube — video coming soon](https://www.youtube.com/@RoboTraderGuy)** — every line written by AI, directed on camera, including the miss and the fix.
+🎬 **Watch this get built:** **[▶️ One Trade → Every Account, Automatically](https://youtu.be/v9VaTVUeX2U)** — every line written by AI, directed on camera, including the miss and the fix.
 
 </div>
 
